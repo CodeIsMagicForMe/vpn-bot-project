@@ -1,1 +1,68 @@
+# docker/docker-compose.yml
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: vpn-bot-postgres
+    environment:
+      POSTGRES_USER: vpn_user
+      POSTGRES_PASSWORD: password123
+      POSTGRES_DB: vpn_bot
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U vpn_user"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: vpn-bot-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  bot:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: vpn-bot-app
+    environment:
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
+      TELEGRAM_WEBHOOK_URL: ${TELEGRAM_WEBHOOK_URL}
+      TELEGRAM_WEBHOOK_SECRET: ${TELEGRAM_WEBHOOK_SECRET}
+      TELEGRAM_ADMIN_IDS: ${TELEGRAM_ADMIN_IDS}
+      TELEGRAM_CHANNEL_ID: ${TELEGRAM_CHANNEL_ID}
+      TELEGRAM_BOT_USERNAME: ${TELEGRAM_BOT_USERNAME}
+      DATABASE_URL: postgresql://vpn_user:password123@postgres:5432/vpn_bot
+      REDIS_URL: redis://redis:6379/0
+      VPN_API_URL: ${VPN_API_URL}
+      VPN_API_TOKEN_PRIMARY: ${VPN_API_TOKEN_PRIMARY}
+      VPN_API_TOKEN_SECONDARY: ${VPN_API_TOKEN_SECONDARY}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY}
+      JWT_SECRET: ${JWT_SECRET}
+      NODE_ENV: production
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  redis_data:
 
