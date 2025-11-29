@@ -1,1 +1,151 @@
+generator client {
+  provider = "prisma-client-js"
+}
 
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                   Int       @id @default(autoincrement())
+  telegramId           BigInt    @unique
+  username             String?
+  language             String    @default("ru")
+  registeredAt         DateTime  @default(now())
+  invitedById          Int?
+  hasTrialUsed         Boolean   @default(false)
+  isBlocked            Boolean   @default(false)
+  subscribedToChannel  Boolean   @default(false)
+  createdAt            DateTime  @default(now())
+
+  subscriptions        Subscription[]
+  payments             Payment[]
+  referralRewards      ReferralReward[] @relation("ReferrerRewards")
+  referredByRewards    ReferralReward[] @relation("ReferredUsers")
+  supportTickets       SupportTicket[]
+  notificationsSent    NotificationsSent[]
+
+  @@index([telegramId])
+}
+
+model Tariff {
+  id              Int        @id @default(autoincrement())
+  code            String     @unique
+  name            String
+  description     String?
+  durationDays    Int
+  priceStars      Int
+  allowedDevices  Int        @default(1)
+  isActive        Boolean    @default(true)
+  createdAt       DateTime   @default(now())
+
+  subscriptions   Subscription[]
+  payments        Payment[]
+
+  @@index([code])
+}
+
+model Subscription {
+  id              Int        @id @default(autoincrement())
+  userId          Int
+  tariffId        Int?
+  type            String     // TRIAL, PAID, BONUS, EXTENDED
+  startAt         DateTime
+  endAt           DateTime
+  status          String     @default("ACTIVE")
+  statusReason    String?
+  allowedDevices  Int
+  trafficLimitGb  Int?
+  trafficUsedGb   Decimal    @default(0)
+  autoRenew       Boolean    @default(false)
+  nextTariffId    Int?
+  createdAt       DateTime   @default(now())
+
+  user            User       @relation(fields: [userId], references: [id])
+  tariff          Tariff?    @relation(fields: [tariffId], references: [id])
+  vpnConfigs      VpnConfig[]
+
+  @@index([userId, status])
+  @@index([status, endAt])
+  @@index([endAt])
+}
+
+model VpnConfig {
+  id              Int        @id @default(autoincrement())
+  userId          Int
+  subscriptionId  Int
+  externalId      String     @unique
+  protocolType    String     // amneziawg, vless_reality
+  configText      Bytes
+  qrData          String?
+  createdAt       DateTime   @default(now())
+  revokedAt       DateTime?
+  maxConnections  Int        @default(1)
+  anomalyFlag     Boolean    @default(false)
+
+  user            User       @relation(fields: [userId], references: [id])
+  subscription    Subscription @relation(fields: [subscriptionId], references: [id])
+
+  @@index([userId, subscriptionId])
+  @@index([protocolType])
+  @@index([userId, protocolType])
+}
+
+model Payment {
+  id                Int       @id @default(autoincrement())
+  userId            Int
+  tariffId          Int
+  starsAmount       Int
+  telegramPayloadId String    @unique
+  status            String    @default("SUCCESS")
+  createdAt         DateTime  @default(now())
+
+  user              User      @relation(fields: [userId], references: [id])
+  tariff            Tariff    @relation(fields: [tariffId], references: [id])
+
+  @@index([userId, createdAt])
+  @@index([createdAt])
+}
+
+model ReferralReward {
+  id                     Int      @id @default(autoincrement())
+  referrerId             Int
+  referredUserId         Int
+  rewardType             String   // DAYS
+  rewardValue            Int
+  appliedToSubscriptionId Int?
+  createdAt              DateTime @default(now())
+
+  referrer               User     @relation("ReferrerRewards", fields: [referrerId], references: [id])
+  referred               User     @relation("ReferredUsers", fields: [referredUserId], references: [id])
+}
+
+model SupportTicket {
+  id          Int       @id @default(autoincrement())
+  userId      Int
+  message     String
+  status      String    @default("OPEN")
+  createdAt   DateTime  @default(now())
+  answeredAt  DateTime?
+  answerText  String?
+
+  user        User      @relation(fields: [userId], references: [id])
+
+  @@index([userId, status])
+}
+
+model NotificationsSent {
+  id               Int      @id @default(autoincrement())
+  userId           Int
+  notificationType String
+  sentAt           DateTime @default(now())
+
+  user             User     @relation(fields: [userId], references: [id])
+
+  @@index([userId, notificationType])
+}
+
+/*
+  Optional future models (credits, connection logs) can be added for Phase 2+
+*/
