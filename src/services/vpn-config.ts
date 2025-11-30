@@ -1,4 +1,5 @@
 // src/services/vpn-config.ts
+import { InputFile } from "grammy";
 import type { VpnConfigItem } from "./vpn-api";
 import type { BotContext } from "../bot";
 import { prisma } from "../db/prisma";
@@ -12,7 +13,7 @@ export async function sendConfigsToUser(
     return;
   }
 
-  const lines = configs.map((cfg) => {
+  const lines = configs.map((cfg: VpnConfigItem) => {
     const icon = cfg.protocol === "amneziawg" ? "🚀" : "🛡";
     return `${icon} ${cfg.protocol.toUpperCase()}\n<code>${cfg.config_text}</code>`;
   });
@@ -29,10 +30,9 @@ export async function sendConfigsToUser(
     if (!base64) continue;
     const buffer = Buffer.from(base64, "base64");
 
-    await ctx.replyWithPhoto(
-      { source: buffer },
-      { caption: `QR Code: ${cfg.protocol.toUpperCase()}` },
-    );
+    await ctx.replyWithPhoto(new InputFile(buffer), {
+      caption: `QR Code: ${cfg.protocol.toUpperCase()}`,
+    });
   }
 }
 
@@ -73,7 +73,7 @@ export async function sendExistingConfigsForActiveSubscription(
   await ctx.reply(
     `✅ Your stored VPN configs:\n\n` +
       configs
-        .map((cfg) => {
+        .map((cfg: any) => {
           const icon = cfg.protocolType === "amneziawg" ? "🚀" : "🛡";
           return `${icon} ${cfg.protocolType.toUpperCase()}\n<code>${Buffer.from(
             cfg.configText,
@@ -83,4 +83,3 @@ export async function sendExistingConfigsForActiveSubscription(
     { parse_mode: "HTML" },
   );
 }
-

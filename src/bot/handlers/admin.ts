@@ -55,9 +55,9 @@ export function registerAdminHandlers(bot: Bot<BotContext>): void {
       return;
     }
 
-    const activeSubs = user.subscriptions.filter(
-      (s) => s.status === "ACTIVE" && s.endAt > new Date(),
-    );
+    const activeSubs = user.subscriptions.filter((s: any) => {
+      return s.status === "ACTIVE" && s.endAt > new Date();
+    });
 
     await ctx.reply(
       `👤 User Info:\n\n` +
@@ -112,4 +112,3 @@ export function registerAdminHandlers(bot: Bot<BotContext>): void {
     await ctx.reply(`✅ User ${tgId} blocked, active subscriptions cancelled`);
   });
 }
-

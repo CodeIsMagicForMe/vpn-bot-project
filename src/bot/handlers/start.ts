@@ -4,7 +4,10 @@ import type { BotContext } from "../index";
 import { prisma } from "../../db/prisma";
 import { config } from "../../utils/config";
 import { vpnApi } from "../../services/vpn-api";
-import { sendConfigsToUser, sendExistingConfigsForActiveSubscription } from "../../services/vpn-config";
+import {
+  sendConfigsToUser,
+  sendExistingConfigsForActiveSubscription,
+} from "../../services/vpn-config";
 import { logger } from "../../utils/logger";
 
 const MAIN_MENU = {
@@ -14,7 +17,7 @@ const MAIN_MENU = {
     [{ text: "🤝 Invite friend" }, { text: "⚙️ Settings" }],
   ],
   resize_keyboard: true,
-} as const;
+};
 
 export function registerStartHandlers(bot: Bot<BotContext>): void {
   bot.command("start", async (ctx) => {
@@ -24,7 +27,7 @@ export function registerStartHandlers(bot: Bot<BotContext>): void {
     const telegramId = BigInt(from.id);
 
     // Referral param: /start ref_123
-    const args = ctx.match;
+    const args = ctx.match as string | undefined;
     let invitedById: number | undefined;
 
     if (typeof args === "string" && args.startsWith("ref_")) {
@@ -46,7 +49,6 @@ export function registerStartHandlers(bot: Bot<BotContext>): void {
         },
       });
     } else if (!user.invitedById && invitedById) {
-      // сохранить реферала только если ещё не заполнен
       await prisma.user.update({
         where: { id: user.id },
         data: { invitedById },
@@ -54,8 +56,7 @@ export function registerStartHandlers(bot: Bot<BotContext>): void {
     }
 
     await ctx.reply(
-      "👋 Welcome to VPN bot!\n\n" +
-        "Use menu buttons to buy VPN, get configs or start a trial.",
+      "👋 Welcome to VPN bot!\n\nUse menu buttons to buy VPN, get configs or start a trial.",
       { reply_markup: MAIN_MENU },
     );
   });
@@ -71,7 +72,8 @@ export function registerStartHandlers(bot: Bot<BotContext>): void {
 
   // Tariff selection via callback_data: tariff:<id>
   bot.callbackQuery(/^tariff:(\d+)$/, async (ctx) => {
-    const tariffId = Number(ctx.match[1]);
+    const match = ctx.match as RegExpMatchArray;
+    const tariffId = Number(match[1]);
     await ctx.answerCallbackQuery();
     await handleTariffSelection(ctx, tariffId);
   });
@@ -105,12 +107,12 @@ async function showTariffs(ctx: BotContext): Promise<void> {
   }
 
   const lines = tariffs.map(
-    (t) => `${t.name} | ${t.priceStars} ⭐ (${t.durationDays} days)`,
+    (t: any) => `${t.name} | ${t.priceStars} ⭐ (${t.durationDays} days)`,
   );
 
   await ctx.reply("Available tariffs:\n\n" + lines.join("\n"), {
     reply_markup: {
-      inline_keyboard: tariffs.map((t) => [
+      inline_keyboard: tariffs.map((t: any) => [
         {
           text: `${t.name} | ${t.priceStars} ⭐`,
           callback_data: `tariff:${t.id}`,
@@ -136,18 +138,18 @@ async function handleTariffSelection(
   // Invoice payload: tariff_<id>_<timestamp>
   const payload = `tariff_${tariff.id}_${Date.now()}`;
 
-  await ctx.replyWithInvoice({
-    title: `${tariff.name} VPN Subscription`,
-    description: `${tariff.durationDays} days access to VPN`,
+  await ctx.replyWithInvoice(
+    `${tariff.name} VPN Subscription`,
+    `${tariff.durationDays} days access to VPN`,
     payload,
-    currency: "XTR", // Telegram Stars
-    prices: [
+    "XTR", // Telegram Stars
+    [
       {
         label: "VPN Subscription",
         amount: tariff.priceStars,
       },
     ],
-  });
+  );
 }
 
 async function handleMyVpn(ctx: BotContext): Promise<void> {
@@ -261,7 +263,6 @@ async function handleTrial(ctx: BotContext): Promise<void> {
 
     const configs = vpnResp.configs ?? [];
 
-    // Сохраняем ДВЕ конфигурации (amneziawg + vless_reality). 
     await prisma.vpnConfig.createMany({
       data: configs.map((cfg) => ({
         userId: user.id,

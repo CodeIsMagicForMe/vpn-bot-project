@@ -36,7 +36,8 @@ interface VpnApiRequestOptions {
 }
 
 class VpnApiClient {
-  private breaker: CircuitBreaker<[VpnApiRequestOptions], VpnCreateConfigsResponse>;
+  // Тип опускаем до any, т.к. opossum без типов
+  private breaker: any;
   private readonly maxRetries = 3;
   private readonly baseDelayMs = 2000;
 
@@ -89,7 +90,7 @@ class VpnApiClient {
       obfuscation_level: "high",
     };
 
-    const res = await this.breaker.fire({
+    const res: VpnCreateConfigsResponse = await this.breaker.fire({
       endpoint: "/configs/create",
       body,
     });
@@ -112,7 +113,7 @@ class VpnApiClient {
       timestamp: new Date().toISOString(),
     };
 
-    const res = await this.breaker.fire({
+    const res: VpnCreateConfigsResponse = await this.breaker.fire({
       endpoint: "/configs/revoke",
       body,
     });
@@ -142,7 +143,7 @@ class VpnApiClient {
         const response = await fetch(url, {
           method: "POST",
           headers: {
-            "Authorization": `Bearer ${config.vpnApi.tokenPrimary}`,
+            Authorization: `Bearer ${config.vpnApi.tokenPrimary}`,
             "Content-Type": "application/json",
           },
           body: JSON.stringify(body),
@@ -192,7 +193,6 @@ class VpnApiClient {
       }
     }
 
-    // Should never reach here
     throw new AppError("VPN API request failed after retries", {
       code: "VPN_API_RETRY_FAILED",
     });
@@ -200,4 +200,3 @@ class VpnApiClient {
 }
 
 export const vpnApi = new VpnApiClient();
-

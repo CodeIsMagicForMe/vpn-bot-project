@@ -9,10 +9,10 @@ export const prisma = new PrismaClient({
 prisma
   .$connect()
   .then(() => logger.info("Prisma connected to database"))
-  .catch((err) => {
+  .catch((err: unknown) => {
     logger.error({ err }, "Failed to connect Prisma");
     process.exit(1);
   });
 
-export type PrismaTx = Parameters<Parameters<typeof prisma.$transaction>[0]>[0];
-
+// Если понадобится транзакционный client, можно будет добавить тип позже
+// export type PrismaTx = PrismaClient;
