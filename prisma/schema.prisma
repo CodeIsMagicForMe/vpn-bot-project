@@ -26,6 +26,8 @@ model User {
   supportTickets       SupportTicket[]
   notificationsSent    NotificationsSent[]
 
+  vpnConfigs           VpnConfig[]   // вот ЭТО поле нужно добавить
+
   @@index([telegramId])
 }
 
@@ -146,6 +148,5 @@ model NotificationsSent {
   @@index([userId, notificationType])
 }
 
-/*
-  Optional future models (credits, connection logs) can be added for Phase 2+
-*/
+// Optional future models (credits, connection logs) can be added for Phase 2+
+

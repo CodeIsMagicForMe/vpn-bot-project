@@ -53,6 +53,10 @@ bot.catch((err) => {
 });
 
 export async function initBot(): Promise<void> {
+  // инициализируем botInfo у grammy
+  await bot.init();
+
   logger.info("Bot initialized");
 }
+
 
