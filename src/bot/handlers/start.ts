@@ -12,9 +12,9 @@ import { logger } from "../../utils/logger";
 
 const MAIN_MENU = {
   keyboard: [
-    [{ text: "🛍 Buy VPN" }, { text: "📲 My VPN" }],
-    [{ text: "🎁 Trial subscription" }],
-    [{ text: "🤝 Invite friend" }, { text: "⚙️ Settings" }],
+    [{ text: "🛍 Купить VPN" }, { text: "📲 Мой VPN" }],
+    [{ text: "🎁 Пробный период" }],
+    [{ text: "🤝 Пригласить друга" }, { text: "⚙️ Настройки" }],
   ],
   resize_keyboard: true,
 };
@@ -56,18 +56,18 @@ export function registerStartHandlers(bot: Bot<BotContext>): void {
     }
 
     await ctx.reply(
-      "👋 Welcome to VPN bot!\n\nUse menu buttons to buy VPN, get configs or start a trial.",
+      "👋 Добро пожаловать!\n\nИспользуйте кнопки меню: купить VPN, получить конфиги или активировать пробный период.",
       { reply_markup: MAIN_MENU },
     );
   });
 
   // Text handlers for main menu
-  bot.hears("🛍 Buy VPN", showTariffs);
-  bot.hears("📲 My VPN", handleMyVpn);
-  bot.hears("🎁 Trial subscription", handleTrial);
-  bot.hears("🤝 Invite friend", handleInviteFriend);
-  bot.hears("⚙️ Settings", async (ctx) => {
-    await ctx.reply("Settings will be available later.");
+  bot.hears("🛍 Купить VPN", showTariffs);
+  bot.hears("📲 Мой VPN", handleMyVpn);
+  bot.hears("🎁 Пробный период", handleTrial);
+  bot.hears("🤝 Пригласить друга", handleInviteFriend);
+  bot.hears("⚙️ Настройки", async (ctx) => {
+    await ctx.reply("Настройки будут доступны позже.");
   });
 
   // Tariff selection via callback_data: tariff:<id>
@@ -102,15 +102,15 @@ async function showTariffs(ctx: BotContext): Promise<void> {
   });
 
   if (!tariffs.length) {
-    await ctx.reply("No tariffs configured yet.");
+    await ctx.reply("Тарифы пока не настроены.");
     return;
   }
 
   const lines = tariffs.map(
-    (t: any) => `${t.name} | ${t.priceStars} ⭐ (${t.durationDays} days)`,
+    (t: any) => `${t.name} | ${t.priceStars} ⭐ (${t.durationDays} дней)`,
   );
 
-  await ctx.reply("Available tariffs:\n\n" + lines.join("\n"), {
+  await ctx.reply("Доступные тарифы:\n\n" + lines.join("\n"), {
     reply_markup: {
       inline_keyboard: tariffs.map((t: any) => [
         {
@@ -131,7 +131,7 @@ async function handleTariffSelection(
   });
 
   if (!tariff || !tariff.isActive) {
-    await ctx.reply("Tariff not available.");
+    await ctx.reply("Тариф недоступен.");
     return;
   }
 
@@ -139,13 +139,13 @@ async function handleTariffSelection(
   const payload = `tariff_${tariff.id}_${Date.now()}`;
 
   await ctx.replyWithInvoice(
-    `${tariff.name} VPN Subscription`,
-    `${tariff.durationDays} days access to VPN`,
+    `${tariff.name} — подписка VPN`,
+    `${tariff.durationDays} дней доступа к VPN`,
     payload,
     "XTR", // Telegram Stars
     [
       {
-        label: "VPN Subscription",
+        label: "Подписка VPN",
         amount: tariff.priceStars,
       },
     ],
@@ -161,7 +161,7 @@ async function handleMyVpn(ctx: BotContext): Promise<void> {
   });
 
   if (!user) {
-    await ctx.reply("Please send /start first.");
+    await ctx.reply("Пожалуйста, сначала отправьте /start.");
     return;
   }
 
@@ -176,30 +176,30 @@ async function handleMyVpn(ctx: BotContext): Promise<void> {
   });
 
   if (!subscription) {
-    await ctx.reply("You have no active subscription.", {
+    await ctx.reply("У вас нет активной подписки.", {
       reply_markup: {
         inline_keyboard: [
-          [{ text: "🛍 Buy VPN", callback_data: "show_tariffs" }],
+          [{ text: "🛍 Купить VPN", callback_data: "show_tariffs" }],
         ],
       },
     });
     return;
   }
 
-  const tariffName = subscription.tariff?.name || "Trial";
+  const tariffName = subscription.tariff?.name || "Пробный";
   const msLeft = subscription.endAt.getTime() - Date.now();
   const daysLeft = Math.max(0, Math.ceil(msLeft / (24 * 60 * 60 * 1000)));
 
   await ctx.reply(
-    `📱 Your VPN Status:\n\n` +
-      `Plan: ${tariffName}\n` +
-      `Days left: ${daysLeft}\n` +
-      `Devices: ${subscription.allowedDevices}\n`,
+    `📱 Статус VPN:\n\n` +
+      `Тариф: ${tariffName}\n` +
+      `Осталось дней: ${daysLeft}\n` +
+      `Устройств: ${subscription.allowedDevices}\n`,
     {
       reply_markup: {
         inline_keyboard: [
-          [{ text: "📋 Get Configs", callback_data: "get_configs" }],
-          [{ text: "🔄 Renew", callback_data: "show_tariffs" }],
+          [{ text: "📋 Получить конфиги", callback_data: "get_configs" }],
+          [{ text: "🔄 Продлить", callback_data: "show_tariffs" }],
         ],
       },
     },
@@ -215,12 +215,12 @@ async function handleTrial(ctx: BotContext): Promise<void> {
   });
 
   if (!user) {
-    await ctx.reply("Please send /start first.");
+    await ctx.reply("Пожалуйста, сначала отправьте /start.");
     return;
   }
 
   if (user.hasTrialUsed) {
-    await ctx.reply("❌ You already used your trial.");
+    await ctx.reply("❌ Вы уже использовали пробный период.");
     return;
   }
 
@@ -233,7 +233,7 @@ async function handleTrial(ctx: BotContext): Promise<void> {
   });
 
   if (activeSubscription) {
-    await ctx.reply("❌ You already have an active subscription.");
+    await ctx.reply("❌ У вас уже есть активная подписка.");
     return;
   }
 
@@ -282,7 +282,7 @@ async function handleTrial(ctx: BotContext): Promise<void> {
   } catch (err) {
     logger.error({ err }, "Trial config generation failed");
     await ctx.reply(
-      "❌ Error creating trial configs. Admin will contact you.",
+      "❌ Ошибка при создании тестовых конфигов. Администратор свяжется с вами.",
     );
   }
 }
@@ -296,13 +296,13 @@ async function handleInviteFriend(ctx: BotContext): Promise<void> {
   });
 
   if (!user) {
-    await ctx.reply("Please send /start first.");
+    await ctx.reply("Пожалуйста, сначала отправьте /start.");
     return;
   }
 
   const refLink = `https://t.me/${config.telegram.username}?start=ref_${user.id}`;
   await ctx.reply(
-    `🎁 Share your referral link:\n\n${refLink}\n\n` +
-      `In Phase 2 your friends will grant you bonus days automatically.`,
+    `🎁 Ваша реферальная ссылка:\n\n${refLink}\n\n` +
+      `Во 2-й фазе приглашённые друзья будут автоматически добавлять вам бонусные дни.`,
   );
 }
